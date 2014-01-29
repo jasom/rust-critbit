@@ -7,40 +7,41 @@ use std::hashmap;
 use std::num;
 use std::util;
 
+/*
 Trait Bitable {
-	//Get the Nth logical byte
-	fn getb(&self, off: uint) -> u8;
+        fn getb(&self, off: uint) -> u8;
 }
+*/
 
 /*
 Trait Zero {
-	fn zero() -> Self;
+        fn zero() -> Self;
 }
 
 impl Bitable for ~str {
-	fn getb(&self, off: uint) {
-		let bytes = s.as_bytes();
-		if(off  >= bytes.len()) {
-			0x00
-		}
-		else {
-			//str::as_bytes(s) {|bytes| bytes[off]}
-			bytes[off]
-		}
-	}
+        fn getb(&self, off: uint) {
+                let bytes = s.as_bytes();
+                if(off  >= bytes.len()) {
+                        0x00
+                }
+                else {
+                        //str::as_bytes(s) {|bytes| bytes[off]}
+                        bytes[off]
+                }
+        }
 }
 
 impl Zero for ~str {
-	fn zero() -> ~str {
-		~""
-	}
+        fn zero() -> ~str {
+                ~""
+        }
 }
 */
 
 
 struct ExternalNode {
-    key: ~str,
-    value: ~str
+    key: Option<~str>,
+    value: Option<~str>
 }
 
 struct InternalNode {
@@ -80,13 +81,11 @@ impl Iterator<uint> for NodeIterator {
             Some(internalNode(cur)) => {
                 let mut cur = cur;
                 loop {
-                    let dummy = externalNode(~ExternalNode {key: ~"",
-                                              value :~""});
+                    let dummy = externalNode(~ExternalNode {key: None, value : None});
                     match cur.pop_left(dummy) {
                         internalNode(node) => {
                             let mut node = node;
-                            let dummy = externalNode(~ExternalNode {key : ~"",
-                                              value :~""});
+                            let dummy = externalNode(~ExternalNode {key : None, value : None});
                             cur.left = node.pop_right(dummy);
                             node.right = internalNode(cur);
                             cur = node;
@@ -128,14 +127,14 @@ fn lenToOffset(len: uint) -> uint {
 }
 
 fn getb(s: &str, off: uint) -> u8{
-    let bytes = s.as_bytes();
-    if(off  >= bytes.len()) {
-        0x00
-    }
-    else {
-        //str::as_bytes(s) {|bytes| bytes[off]}
-        bytes[off]
-    }
+        let bytes = s.as_bytes();
+        if(off  >= bytes.len()) {
+                0x00
+        }
+        else {
+                //str::as_bytes(s) {|bytes| bytes[off]}
+                bytes[off]
+        }
 }
 
 fn mismatch (s1:&str,s2:&str) -> Option<(uint,u8,u8)> {
@@ -177,26 +176,12 @@ fn findbest(mut cb: &Node, key :&str) -> (~str,~str) {
                 }
             }
             &externalNode(ref n) => {
-                return (n.key.clone(),n.value.clone())
+                match (&n.key,&n.value) {
+                    (&Some(ref k),&Some(ref v)) => { return (k.clone(),v.clone()) }
+                    _ => fail!()
+                }
             }
             }
-    }
-}
-//TODO convert to loop
-fn findbestR(cb: &~Node, key :&str) -> (~str,~str) {
-    match cb {
-        &~internalNode(ref n) =>{
-        //{left : left, right : right, length : length})=> {
-            if (goleft(key,lenToOffset(n.len),lenToMask(n.len))) {
-                findbest(&n.left,key)
-            }
-            else {
-                findbest(&n.right,key)
-            }
-        }
-        &~externalNode(ref n) => {
-            (n.key.clone(),n.value.clone())
-        }
     }
 }
 
@@ -216,27 +201,10 @@ fn replace(mut cb: &mut Node, key :&str, value : ~str) {
             }
         }
         &externalNode(ref mut n) => {
-            n.value = value;
+            n.value = Some(value);
             return;
         }
     }
-    }
-}
-
-fn replaceR(cb: &mut ~Node, key :&str, value : ~str) {
-    match cb {
-        &~internalNode(ref mut n) =>{
-            //{left : left, right : right, length : length})=> {
-            if (goleft(key,lenToOffset(n.len),lenToMask(n.len))) {
-                replace(&mut n.left,key,value)
-            }
-            else {
-                replace(&mut n.right,key,value)
-            }
-        }
-        &~externalNode(ref mut n) => {
-            n.value = value
-        }
     }
 }
 
@@ -244,8 +212,8 @@ fn insertAtPoint<'a>(cb : &'a mut Node, key : ~str, value : ~str,
                      count: uint, mask :u8)
 {
     let direction = goleft(key,count,mask);
-    let newExtNode = externalNode(~ExternalNode { key: key, value : value });
-    let mut tmp = externalNode(~ExternalNode { key : ~"", value : ~""});
+    let newExtNode = externalNode(~ExternalNode { key: Some(key), value : Some(value) });
+    let mut tmp = externalNode(~ExternalNode { key : None, value : None});
     swap(&mut tmp,cb);
     let mut newIntNode = 
         if(direction) {
@@ -363,23 +331,7 @@ fn cbset(cb: &mut~CritbitTree, key : ~str, value : ~str)
                 addnew(node,key,value,bestkey)
             }
         },
-            None => cb.root = Some(externalNode(~ExternalNode {key: key, value : value}))
-    }
-}
-
-fn cbsetR(cb: &mut~CritbitTree, key : ~str, value : ~str)
-{
-    match cb.root {
-        Some(ref mut node) =>
-        {
-            let (bestkey,_) = findbest(node, key);
-            //io::print(fmt!("Bestkey: %s,%s\n",key,bestkey));
-            if(bestkey == key) { replace(node,key,value) } //TODO handle this 
-            else {
-                addnew(node,key,value,bestkey)
-            }
-        },
-            None => cb.root = Some(externalNode(~ExternalNode {key: key, value : value}))
+            None => cb.root = Some(externalNode(~ExternalNode {key: Some(key), value : Some(value)}))
     }
 }
 
@@ -398,6 +350,7 @@ fn cbget(cb: &~CritbitTree, key : &str) -> Option<~str> {
     }
 }
 
+/*
 fn printTree (c : &~CritbitTree) {
     match c.root {
         Some(ref x) => 
@@ -413,6 +366,7 @@ fn spaces(n : uint) {
         i-=1;
     }
 }
+
 fn printTreeInternal(n : &Node, indent : uint) {
     spaces(indent);
     match n {
@@ -430,6 +384,7 @@ fn printTreeInternal(n : &Node, indent : uint) {
         }
     }
 }
+*/
 
 fn test()
 {
