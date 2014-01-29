@@ -1,17 +1,13 @@
 use std::util::swap;
-use std::io;
 use std::rand;
 use std::os;
-use std::uint;
 use std::hashmap;
 use std::num;
 use std::util;
 
-/*
-Trait Bitable {
+trait Bitable {
         fn getb(&self, off: uint) -> u8;
 }
-*/
 
 /*
 Trait Zero {
@@ -229,7 +225,7 @@ fn insertAtPoint<'a>(cb : &'a mut Node, key : ~str, value : ~str,
     swap(&mut newIntNode,cb);
 }
 
-fn findInsertionPoint<'a>(cb : &mut Node, key : ~str, value: ~str, bestMatch: &str,
+fn findInsertionPoint<'a>(cb : &mut Node, key : ~str, value: ~str,
         count : uint, mask : u8)
 {
         match *cb {
@@ -245,7 +241,7 @@ fn findInsertionPoint<'a>(cb : &mut Node, key : ~str, value: ~str, bestMatch: &s
             internalNode(~InternalNode{ left : _, right : _, len: len}) =>
                 {
                     let direction = goleft(key,lenToOffset(len),lenToMask(len));
-                    findInsertionPointInternal(cb,key,value,bestMatch,count,mask,direction)
+                    findInsertionPointInternal(cb,key,value,count,mask,direction)
                 }
         }
 }
@@ -266,8 +262,7 @@ fn isInsertionPoint<'n>(cb: &Node, count : uint, direction : bool, mask : u8) ->
 }
 
 fn findInsertionPointInternal(mut cb : &mut Node, key : ~str,
-        value: ~str, bestMatch: &str,
-        count : uint, mask : u8, mut direction : bool)
+        value: ~str, count : uint, mask : u8, mut direction : bool)
 {
     loop {
         let tmp = cb;
@@ -312,7 +307,7 @@ fn addnew(cb : &mut Node,key : ~str,value : ~str,bestMatch : ~str) {
             while (x & (x - 1) != 0) {
                 x &= (x - 1);
             }
-            findInsertionPoint(cb,key,value,bestMatch,count,x)
+            findInsertionPoint(cb,key,value,count,x)
         },
     None => fail!()
     }
