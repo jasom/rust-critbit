@@ -372,8 +372,8 @@ impl<K : fmt::Default + Bitable + Eq + Default, V: Default> Node<K,V> {
 
 impl <K : fmt::Default + Eq + Bitable + Default,V : Default + fmt::Default>  CritbitTree<K,V> {
     fn set(&mut self, key : K, value : V) -> Option<V> {
-        printTree(self);
-        io::print("-----\n");
+        //printTree(self);
+        //io::print("-----\n");
         match self.root {
             Some(ref mut node) =>
             {
